@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+    <title>Calculator</title>
+
+    <!-- favicon -->
+    <link rel="icon" href="www/calculator-variant-custom (2).png" type="image/png">
+    <link rel="apple-touch-icon" href="www/calculator-variant-custom (2).png" type="image/png">
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Set up Tailwind dark mode to work with a class
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    
+    <!-- html2canvas library for converting HTML to an image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- Google Fonts for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom styles for a polished look and feel */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height for mobile browsers */
+            height: calc(var(--vh, 1vh) * 100); /* Fallback for dynamic viewport */
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden; /* Prevent overscroll and white space */
+            background: #f3f4f6; /* Light theme background */
+            /* Safe area handling for mobile browsers */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            /* Prevent overscroll bounce on iOS */
+            overscroll-behavior: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Dark theme background */
+        .dark html, .dark body {
+            background: #1f2937;
+        }
+
+        .calculator-btn {
+            transition: all 0.1s ease-in-out;
+            font-weight: 700; /* Bold text for all buttons */
+        }
+
+        .calculator-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .history-item {
+            transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .history-item.selected {
+            background-color: #e5e7eb; /* light:bg-gray-200 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+            transform: scale(1.02);
+            border-left: 4px solid #3b82f6; /* border-blue-500 */
+        }
+        
+        .dark .history-item.selected {
+            background-color: #4a5568; /* dark:bg-gray-600 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        
+        #history-panel {
+            touch-action: none; /* Allows us to control touch events */
+            transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #keypad {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease-out;
+        }
+
+        #keypad.hidden-by-panel {
+            transform: translateY(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Scrollbar styling for a modern look */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; } /* dark:bg-gray-800 */
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 10px; } /* dark:bg-gray-600 */
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; } /* dark:bg-gray-500 */
+
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: #1f2937; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        html:not(.dark) .custom-scrollbar::-webkit-scrollbar-track { background: #e5e7eb; }
+        html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: #9ca3af; }
+        html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        
+        .theme-btn-active {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .dark .theme-btn-active {
+            background-color: #3b82f6;
+        }
+
+        /* Collapsible menu animations */
+        .menu-section {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .menu-section button {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .menu-section .hidden {
+            display: none;
+        }
+
+        .menu-section svg {
+            transition: transform 0.2s ease-in-out;
+        }
+
+        /* History item text wrapping */
+        .history-item {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .history-item div {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            line-height: 1.4;
+        }
+
+        /* Dynamic height distribution: 40% header+display, 60% keypad */
+        
+        /* Calculator container uses available height */
+        #calculator-container {
+            height: 100vh;
+            height: 100dvh;
+            height: calc(var(--vh, 1vh) * 100);
+            overflow-y: auto; /* Enable vertical scrolling when needed */
+            scroll-behavior: smooth; /* Smooth scrolling */
+            /* Prevent overscroll bounce */
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Custom scrollbar for calculator container */
+        #calculator-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #calculator-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        
+        #calculator-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        
+        #calculator-container::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .dark #calculator-container::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        .dark #calculator-container::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+        
+        .dark #calculator-container::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* Top section (header + display) - 40% of available height */
+        #top-section {
+            height: calc(var(--available-height, 100vh) * 0.4);
+            min-height: 200px; /* Minimum height for usability */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Keypad section - 60% of available height */
+        #keypad {
+            height: calc(var(--available-height, 100vh) * 0.6);
+            min-height: 300px; /* Minimum height for usability */
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+        
+        /* Dynamic responsive design for all screen sizes */
+        
+        /* Large screens (desktop) - 1024px and above */
+        @media (min-width: 1024px) {
+            #display {
+                font-size: 3rem;
+            }
+            
+            .calculator-btn {
+                font-size: 1.75rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 1rem;
+                padding: 1rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 2rem;
+            }
+        }
+        
+        /* Medium screens (tablets) - 769px to 1023px */
+        @media (max-width: 1023px) and (min-width: 769px) {
+            #display {
+                font-size: 2.5rem;
+            }
+            
+            .calculator-btn {
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 0.75rem;
+                padding: 0.75rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* Small screens (mobile) - 481px to 768px */
+        @media (max-width: 768px) and (min-width: 481px) {
+            #display {
+                font-size: 2rem;
+            }
+            
+            .calculator-btn {
+                font-size: 1.25rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 1rem;
+            }
+            
+            h3 {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Very small screens (mobile) - 361px to 480px */
+        @media (max-width: 480px) and (min-width: 361px) {
+            #display {
+                font-size: 1.75rem;
+            }
+            
+            .calculator-btn {
+                font-size: 1rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 0.375rem;
+                padding: 0.375rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 0.75rem;
+            }
+            
+            h3 {
+                font-size: 0.875rem;
+            }
+            
+            .history-item {
+                padding: 0.75rem;
+            }
+            
+            .history-item .text-sm {
+                font-size: 0.75rem;
+            }
+            
+            .history-item .text-2xl {
+                font-size: 1.25rem;
+            }
+        }
+        
+        /* Extra small screens (mobile) - 320px to 360px */
+        @media (max-width: 360px) {
+            #display {
+                font-size: 1.5rem;
+            }
+            
+            .calculator-btn {
+                font-size: 0.875rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 0.25rem;
+                padding: 0.25rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 0.5rem;
+            }
+            
+            h3 {
+                font-size: 0.75rem;
+            }
+            
+            .history-item .text-sm {
+                font-size: 0.7rem;
+            }
+            
+            .history-item .text-2xl {
+                font-size: 1.1rem;
+            }
+        }
+        
+        /* Ultra small screens (mobile) - below 320px */
+        @media (max-width: 319px) {
+            #display {
+                font-size: 1.25rem;
+            }
+            
+            .calculator-btn {
+                font-size: 0.75rem;
+                font-weight: 700;
+            }
+            
+            #keypad {
+                gap: 0.125rem;
+                padding: 0.125rem;
+            }
+            
+            .flex.justify-between.items-center {
+                padding: 0.25rem;
+            }
+            
+            h3 {
+                font-size: 0.625rem;
+            }
+        }
+
+        /* Custom scrollbar styles for preview card */
+        .scrollbar-thin {
+            scrollbar-width: thin;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #6b7280;
+        }
+        
+        .dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Mobile browser UI handling */
+        @supports (height: 100dvh) {
+            html, body {
+                height: 100dvh;
+            }
+            
+            #calculator-container {
+                min-height: 100dvh;
+            }
+        }
+
+        /* Handle mobile browser address bar changes */
+        @media screen and (max-width: 768px) {
+            html, body {
+                /* Ensure content is always visible above browser UI */
+                min-height: 100vh;
+                min-height: 100dvh;
+                /* Add extra padding for mobile browser UI */
+                padding-bottom: max(env(safe-area-inset-bottom), 60px);
+            }
+            
+            #calculator-container {
+                /* Prevent content from being hidden behind browser UI */
+                min-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+                min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            }
+            
+            /* Adjust top bar padding for mobile */
+            .flex.justify-between.items-center.p-4.pt-6.pb-4 {
+                padding-top: max(1.5rem, env(safe-area-inset-top) + 0.5rem);
+                padding-bottom: max(15rem, env(safe-area-inset-bottom) + 10rem);
+            }
+        }
+
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            html, body {
+                /* iOS Safari viewport handling */
+                height: -webkit-fill-available;
+                min-height: -webkit-fill-available;
+                /* Prevent overscroll bounce */
+                overscroll-behavior: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            #calculator-container {
+                height: -webkit-fill-available;
+                /* Prevent overscroll bounce */
+                overscroll-behavior: contain;
+            }
+        }
+        
+        /* Additional mobile fixes to prevent white space */
+        @media screen and (max-width: 768px) {
+            html, body {
+                /* Prevent overscroll bounce on mobile */
+                overscroll-behavior: none;
+                -webkit-overflow-scrolling: touch;
+                /* Ensure no white space appears */
+                background-attachment: fixed;
+            }
+            
+            #calculator-container {
+                /* Prevent overscroll bounce */
+                overscroll-behavior: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+    </style>
+</head>
+<body class="text-gray-900 dark:text-white h-screen w-screen">
+
+    <div id="calculator-container" class="w-full bg-gray-100 dark:bg-gray-800 flex flex-col relative">
+        
+        <!-- Top Section (Header + Display) - 40% of screen height -->
+        <div id="top-section" class="bg-gray-100 dark:bg-gray-800">
+            <!-- Top Bar with Menu -->
+            <div class="flex justify-between items-center p-2 md:p-4 pt-4 md:pt-6 pb-2 md:pb-4 flex-shrink-0">
+                <h2 class="text-xl md:text-lg font-semibold text-black dark:text-white">Calculator</h2>
+                <!-- Menu Icon -->
+                <svg id="menu-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 dark:text-gray-400 cursor-pointer z-20"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            </div>
+            
+            <!-- Display Area -->
+            <div id="display-area" class="text-right flex-grow px-2 md:px-4 pb-2 md:pb-4 flex flex-col justify-center">
+                <div id="expression-preview" class="text-gray-500 dark:text-gray-400 text-xl md:text-2xl h-6 md:h-8 overflow-x-auto whitespace-nowrap text-ellipsis flex items-center justify-end"></div>
+                <div id="display" class="w-full h-16 md:h-20 text-3xl md:text-5xl font-light pr-1 flex items-center justify-end break-all">0</div>
+                <!-- Limit indicator -->
+                <div id="limit-indicator" class="hidden text-xs text-red-500 dark:text-red-400 mt-1 text-right">
+                    <span id="limit-text">Expression limit reached</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calculator Buttons - 60% of screen height -->
+        <div id="keypad" class="bg-gray-100 dark:bg-gray-800">
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-yellow-600 dark:text-yellow-400" onclick="clearAll()">C</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-yellow-600 dark:text-yellow-400" onclick="backspace()">⌫</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-yellow-600 dark:text-yellow-400" onclick="handleOperator('%')">%</button>
+            <button class="calculator-btn text-sm md:text-xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 dark:bg-yellow-500 dark:hover:bg-yellow-600 rounded-xl md:rounded-2xl" onclick="handleOperator('÷')">÷</button>
+            
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-blue-600 dark:text-blue-400" onclick="addParentheses('(')">(</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-blue-600 dark:text-blue-400" onclick="addParentheses(')')">)</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-xl md:rounded-2xl text-yellow-600 dark:text-yellow-400" onclick="handleOperator('^')">^</button>
+            <button class="calculator-btn text-sm md:text-xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 dark:bg-yellow-500 dark:hover:bg-yellow-600 rounded-xl md:rounded-2xl" onclick="handleOperator('×')">×</button>
+            
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('7')">7</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('8')">8</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('9')">9</button>
+            <button class="calculator-btn text-sm md:text-xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 dark:bg-yellow-500 dark:hover:bg-yellow-600 rounded-xl md:rounded-2xl" onclick="handleOperator('-')">−</button>
+
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('4')">4</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('5')">5</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('6')">6</button>
+            <button class="calculator-btn text-sm md:text-xl bg-yellow-400 hover:bg-yellow-500 text-gray-900 dark:bg-yellow-500 dark:hover:bg-yellow-600 rounded-xl md:rounded-2xl" onclick="handleOperator('+')">+</button>
+
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('1')">1</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('2')">2</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDigit('3')">3</button>
+            <button class="calculator-btn text-sm md:text-xl bg-blue-500 hover:bg-blue-600 text-white rounded-xl md:rounded-2xl row-span-2" onclick="handleEquals()">=</button>
+
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl col-span-2" onclick="inputDigit('0')">0</button>
+            <button class="calculator-btn text-sm md:text-xl bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-xl md:rounded-2xl" onclick="inputDecimal()">.</button>
+        </div>
+
+        <!-- Menu Modal -->
+        <div id="menu-modal" class="hidden absolute top-16 right-4 bg-gray-50 dark:bg-gray-700 shadow-xl rounded-lg p-2 z-30 w-64">
+            <!-- History Section -->
+            <button id="history-menu-btn" class="w-full text-left px-2 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                History
+            </button>
+            
+            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+            
+            <!-- Calculation Mode Section -->
+            <div class="menu-section">
+                <button id="calc-mode-header" class="w-full text-left px-2 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Calculation Mode</span>
+                    </div>
+                    <svg id="calc-mode-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="calc-mode-options" class="hidden mt-1">
+                    <button data-calc-mode="bodmas" class="w-full text-left px-6 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                        BODMAS
+                    </button>
+                    <button data-calc-mode="left-to-right" class="w-full text-left px-6 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                        Left to Right
+                    </button>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+            
+            <!-- Theme Section -->
+            <div class="menu-section">
+                <button id="theme-header" class="w-full text-left px-2 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Theme</span>
+                    </div>
+                    <svg id="theme-arrow" class="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="theme-options" class="hidden mt-1">
+                    <button data-theme-btn="light" class="w-full text-left px-6 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                        Light
+                    </button>
+                    <button data-theme-btn="dark" class="w-full text-left px-6 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                        Dark
+                    </button>
+                    <button data-theme-btn="system" class="w-full text-left px-6 py-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center">
+                        System
+                    </button>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+            <div class="px-2 py-1 text-xs text-gray-400 dark:text-gray-500">Version 1.0.1</div>
+        </div>
+
+        <!-- Full Screen History Modal -->
+        <div id="history-modal" class="hidden absolute inset-0 bg-gray-100 dark:bg-gray-800 z-50 flex flex-col">
+            <!-- History Header -->
+            <div class="flex justify-between items-center p-4 pt-6 pb-2 flex-shrink-0">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">History</h2>
+                <button id="close-history" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- History Content -->
+            <div class="flex-grow overflow-y-auto custom-scrollbar px-4">
+                <ul id="modal-history-list" class="text-gray-900 dark:text-gray-300"></ul>
+                <div id="modal-history-placeholder" class="text-gray-400 dark:text-gray-500 text-center p-8">Your calculations will appear here.</div>
+            </div>
+            
+            <!-- History Actions -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0 flex gap-4">
+                <button id="share-history-btn" class="hidden bg-blue-500 text-white w-full px-4 py-3 rounded-lg text-sm font-medium shadow-md hover:bg-blue-600 transition-all" onclick="shareHistory()">
+                    Share Selected
+                </button>
+                <button id="clear-history-btn" class="bg-red-500 text-white w-full px-4 py-3 rounded-lg text-sm font-medium shadow-md hover:bg-red-600 transition-all" onclick="clearHistory()">
+                    Clear History
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const display = document.getElementById('display');
+        const expressionPreview = document.getElementById('expression-preview');
+        const modalHistoryList = document.getElementById('modal-history-list');
+        const modalHistoryPlaceholder = document.getElementById('modal-history-placeholder');
+        const shareHistoryBtn = document.getElementById('share-history-btn');
+        const menuIcon = document.getElementById('menu-icon');
+        const menuModal = document.getElementById('menu-modal');
+        const historyMenuBtn = document.getElementById('history-menu-btn');
+        const historyModal = document.getElementById('history-modal');
+        const closeHistoryBtn = document.getElementById('close-history');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const themeButtons = document.querySelectorAll('[data-theme-btn]');
+        const calcModeButtons = document.querySelectorAll('[data-calc-mode]');
+        
+        // Collapsible menu elements
+        const calcModeHeader = document.getElementById('calc-mode-header');
+        const calcModeOptions = document.getElementById('calc-mode-options');
+        const calcModeArrow = document.getElementById('calc-mode-arrow');
+        const themeHeader = document.getElementById('theme-header');
+        const themeOptions = document.getElementById('theme-options');
+        const themeArrow = document.getElementById('theme-arrow');
+        
+        // Calculator State
+        let expression = '0';
+        let showingResult = false;
+        let calculationMode = 'bodmas';
+        
+        // Calculator Limits Configuration
+        const CALCULATOR_LIMITS = {
+            MAX_NUMBER_LENGTH: 16,            // Maximum characters per individual number
+            MAX_OPERATIONS: 29,               // Maximum number of operations (+, -, ×, ÷, ^, %)
+            MAX_NUMBERS: 30,                  // Maximum number of numbers (operands)
+            MAX_DECIMAL_PLACES: 8,            // Maximum decimal places for numbers
+            MAX_RESULT_LENGTH: 12,            // Maximum characters in result display
+            MAX_PARENTHESES_DEPTH: 3          // Maximum nested parentheses depth
+        };
+
+        // History State
+        let history = [];
+        let isSelectionMode = false;
+        let selectedIndices = new Set();
+        let longPressTimer;
+        let isPressing = false;
+
+        function openHistoryModal() {
+            historyModal.classList.remove('hidden');
+            renderHistory();
+            updateSelectionUI(); // Ensure share button state is correct on open
+        }
+
+        function closeHistoryModal() {
+            historyModal.classList.add('hidden');
+            exitSelectionMode();
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.setItem('calculator-history', JSON.stringify(history));
+            renderHistory();
+            exitSelectionMode();
+        }
+
+        // Validation functions for calculator limits
+        function validateNumberLength(expr) {
+            // Check each individual number's length
+            const numbers = expr.match(/\d+\.?\d*/g);
+            if (!numbers) return true;
+            return numbers.every(num => num.length <= CALCULATOR_LIMITS.MAX_NUMBER_LENGTH);
+        }
+
+        function validateOperationCount(expr) {
+            const operations = expr.match(/[+\-×÷%^]/g);
+            const count = operations ? operations.length : 0;
+            return count <= CALCULATOR_LIMITS.MAX_OPERATIONS;
+        }
+
+        function validateNumberCount(expr) {
+            // Only count actual numbers, not parentheses or operators
+            const numbers = expr.match(/\d+\.?\d*/g);
+            const count = numbers ? numbers.length : 0;
+            return count <= CALCULATOR_LIMITS.MAX_NUMBERS;
+        }
+
+        function validateParenthesesDepth(expr) {
+            let depth = 0;
+            let maxDepth = 0;
+            for (let char of expr) {
+                if (char === '(') {
+                    depth++;
+                    maxDepth = Math.max(maxDepth, depth);
+                } else if (char === ')') {
+                    depth--;
+                    if (depth < 0) return false; // Mismatched parentheses
+                }
+            }
+            // Allow unmatched opening parentheses during typing, but limit depth
+            return depth >= 0 && maxDepth <= CALCULATOR_LIMITS.MAX_PARENTHESES_DEPTH;
+        }
+
+        function validateDecimalPlaces(expr) {
+            const numbers = expr.match(/\d+\.\d+/g);
+            if (!numbers) return true;
+            return numbers.every(num => {
+                const decimalPart = num.split('.')[1];
+                return decimalPart.length <= CALCULATOR_LIMITS.MAX_DECIMAL_PLACES;
+            });
+        }
+
+        function validateExpression(expr) {
+            if (!validateNumberLength(expr)) {
+                return { valid: false, error: "Number too long" };
+            }
+            if (!validateOperationCount(expr)) {
+                return { valid: false, error: "Too many operations" };
+            }
+            if (!validateNumberCount(expr)) {
+                return { valid: false, error: "Too many numbers" };
+            }
+            if (!validateParenthesesDepth(expr)) {
+                return { valid: false, error: "Parentheses too deep" };
+            }
+            if (!validateDecimalPlaces(expr)) {
+                return { valid: false, error: "Too many decimal places" };
+            }
+            return { valid: true };
+        }
+
+        function showLimitMessage(message) {
+            // Show limit message in the indicator
+            const limitIndicator = document.getElementById('limit-indicator');
+            const limitText = document.getElementById('limit-text');
+            
+            limitText.textContent = message;
+            limitIndicator.classList.remove('hidden');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                limitIndicator.classList.add('hidden');
+            }, 3000);
+        }
+
+        function evaluateBODMAS(expr) {
+            try {
+                // Shunting-yard algorithm to convert infix to postfix
+                const precedence = { '+': 1, '-': 1, '×': 2, '÷': 2, '%': 2, '^': 3 };
+                const associativity = { '^': 'Right', '+': 'Left', '-': 'Left', '×': 'Left', '÷': 'Left', '%': 'Left' };
+                const tokens = expr.match(/(\d+\.?\d*)|([+\-×÷%^()])/g);
+                const outputQueue = [];
+                const operatorStack = [];
+
+                tokens.forEach(token => {
+                    if (!isNaN(parseFloat(token))) {
+                        outputQueue.push(parseFloat(token));
+                    } else if ("+-×÷%^".includes(token)) {
+                        while (
+                            operatorStack.length &&
+                            precedence[operatorStack[operatorStack.length - 1]] >= precedence[token] &&
+                            associativity[token] === 'Left'
+                        ) {
+                            outputQueue.push(operatorStack.pop());
+                        }
+                        operatorStack.push(token);
+                    } else if (token === '(') {
+                        operatorStack.push(token);
+                    } else if (token === ')') {
+                        while (operatorStack.length && operatorStack[operatorStack.length - 1] !== '(') {
+                            outputQueue.push(operatorStack.pop());
+                        }
+                        operatorStack.pop(); // Pop '('
+                    }
+                });
+
+                while (operatorStack.length) {
+                    outputQueue.push(operatorStack.pop());
+                }
+
+                // Evaluate postfix expression
+                const evaluationStack = [];
+                outputQueue.forEach(token => {
+                    if (typeof token === 'number') {
+                        evaluationStack.push(token);
+                    } else {
+                        const b = evaluationStack.pop();
+                        const a = evaluationStack.pop();
+                        switch (token) {
+                            case '+': evaluationStack.push(a + b); break;
+                            case '-': evaluationStack.push(a - b); break;
+                            case '×': evaluationStack.push(a * b); break;
+                            case '÷': if(b===0) throw new Error("Div by 0"); evaluationStack.push(a / b); break;
+                            case '%': evaluationStack.push(a % b); break;
+                            case '^': evaluationStack.push(Math.pow(a, b)); break;
+                        }
+                    }
+                });
+
+                return evaluationStack[0];
+            } catch {
+                return "Error";
+            }
+        }
+        
+        function evaluateLeftToRight(expr) {
+            try {
+                const tokens = expr.match(/(\d+\.?\d*)|([+\-×÷%^])/g) || [];
+                if (tokens.length === 0) return 0;
+                let result = parseFloat(tokens[0]);
+                for (let i = 1; i < tokens.length; i += 2) {
+                    const operator = tokens[i];
+                    const nextNumber = parseFloat(tokens[i + 1]);
+                    switch (operator) {
+                        case '+': result += nextNumber; break;
+                        case '-': result -= nextNumber; break;
+                        case '×': result *= nextNumber; break;
+                        case '÷': if(nextNumber===0) throw new Error("Div by 0"); result /= nextNumber; break;
+                        case '%': result %= nextNumber; break;
+                        case '^': result = Math.pow(result, nextNumber); break;
+                    }
+                }
+                return result;
+            } catch {
+                return "Error";
+            }
+        }
+
+        function evaluateExpression(expr) {
+            try {
+                if (/[+\-×÷%^]$/.test(expr)) {
+                    expr = expr.slice(0, -1);
+                }
+                let result;
+                if (calculationMode === 'bodmas') {
+                    result = evaluateBODMAS(expr);
+                } else {
+                    result = evaluateLeftToRight(expr);
+                }
+
+                if (typeof result !== 'number' || !isFinite(result)) {
+                    return "Error";
+                }
+                return parseFloat(result.toPrecision(12));
+            } catch {
+                return "Error";
+            }
+        }
+        
+
+        function updateDisplay() {
+            const displayValue = expression.replace(/[+\-×÷%^()]/g, match => ` ${match} `).trim();
+            display.textContent = displayValue;
+
+            if (showingResult) {
+                expressionPreview.textContent = '';
+            } else {
+                 if (expression === '0' || expression === '') {
+                    expressionPreview.textContent = '';
+                } else {
+                    const calculatedPreview = evaluateExpression(expression);
+                     if (typeof calculatedPreview === 'number' && expression.match(/[+\-×÷%^]/)) {
+                        expressionPreview.textContent = `= ${calculatedPreview}`;
+                    } else {
+                        expressionPreview.textContent = '';
+                    }
+                }
+            }
+            const maxLength = 9;
+            if (display.textContent.length > maxLength) {
+                const newSize = Math.max(1.5, 4 - (display.textContent.length - maxLength) * 0.4);
+                display.style.fontSize = `${newSize}rem`;
+            } else { display.style.fontSize = '3rem'; }
+        }
+
+        function inputDigit(digit) {
+            if (showingResult) {
+                expression = '';
+                showingResult = false;
+            }
+            
+            // Prevent leading zeros (except for decimal numbers)
+            if (expression === '0' && digit !== '.') {
+                expression = digit;
+            } else {
+                const newExpression = expression + digit;
+                const validation = validateExpression(newExpression);
+                
+                if (!validation.valid) {
+                    showLimitMessage(validation.error);
+                    return; // Don't add the digit
+                }
+                expression = newExpression;
+            }
+            updateDisplay();
+        }
+
+        function inputDecimal() {
+            if (showingResult) {
+                expression = '0.';
+                showingResult = false;
+                updateDisplay(); 
+                return;
+            }
+            
+            // Split by operators to check the last number
+            const parts = expression.split(/[+\-×÷%^()]/);
+            const lastPart = parts[parts.length - 1];
+            
+            // Only add decimal if the last number doesn't already have one
+            if (!lastPart.includes('.')) { 
+                const newExpression = expression + '.';
+                const validation = validateExpression(newExpression);
+                
+                if (!validation.valid) {
+                    showLimitMessage(validation.error);
+                    return; // Don't add the decimal
+                }
+                expression = newExpression;
+            }
+            updateDisplay();
+        }
+
+        function addParentheses(paren) {
+            if (showingResult) {
+                expression = '';
+                showingResult = false;
+            }
+            
+            // Handle opening parenthesis
+            if (paren === '(') {
+                if (expression === '0' || expression === '') {
+                    expression = '(';
+                } else {
+                    const newExpression = expression + '(';
+                    const validation = validateExpression(newExpression);
+                    if (!validation.valid) {
+                        showLimitMessage(validation.error);
+                        return;
+                    }
+                    expression = newExpression;
+                }
+            } 
+            // Handle closing parenthesis
+            else if (paren === ')') {
+                // Only add closing parenthesis if there's a matching opening one
+                const openCount = (expression.match(/\(/g) || []).length;
+                const closeCount = (expression.match(/\)/g) || []).length;
+                
+                if (openCount > closeCount) {
+                    const newExpression = expression + ')';
+                    const validation = validateExpression(newExpression);
+                    if (!validation.valid) {
+                        showLimitMessage(validation.error);
+                        return;
+                    }
+                    expression = newExpression;
+                } else {
+                    showLimitMessage("No matching opening parenthesis");
+                    return;
+                }
+            }
+            
+            updateDisplay();
+        }
+
+
+        function handleOperator(op) {
+            if (showingResult) {
+                const result = evaluateExpression(expressionPreview.textContent.replace("=", "").trim());
+                if (typeof result === 'string' && result.includes('Error')) {
+                    return; // Don't proceed if there's an error
+                }
+                expression = String(result);
+                showingResult = false;
+            }
+            
+            expression = expression.trim();
+            
+            // Don't allow operators at the start (except for negative numbers)
+            if (expression === '' || expression === '0') {
+                if (op === '-') {
+                    expression = '-';
+                } else {
+                    return; // Don't add other operators to empty expression
+                }
+            } else if (/[+\-×÷%^]$/.test(expression)) {
+                // Replace the last operator
+                expression = expression.slice(0, -1) + op;
+            } else {
+                // Add the operator
+                const newExpression = expression + op;
+                const validation = validateExpression(newExpression);
+                
+                if (!validation.valid) {
+                    showLimitMessage(validation.error);
+                    return; // Don't add the operator
+                }
+                expression = newExpression;
+            }
+            updateDisplay();
+        }
+        
+        function handleEquals() {
+            if (showingResult) return;
+            const finalResult = evaluateExpression(expression);
+            
+            if (finalResult === "Error") {
+                 display.textContent = "Error";
+            } else {
+                addToHistory(`${expression} = ${finalResult}`);
+                expressionPreview.textContent = `${expression} =`;
+                display.textContent = finalResult;
+                expression = String(finalResult);
+            }
+            showingResult = true;
+        }
+
+        function clearAll() {
+            expression = '0';
+            showingResult = false;
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (showingResult) { clearAll(); return; }
+            expression = expression.slice(0, -1) || '0';
+            updateDisplay();
+        }
+
+        function addToHistory(calculation) {
+            history.unshift(calculation);
+            localStorage.setItem('calculator-history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            modalHistoryList.innerHTML = '';
+            if (history.length > 0) {
+                modalHistoryPlaceholder.classList.add('hidden');
+                clearHistoryBtn.classList.remove('hidden');
+                history.forEach((item, index) => {
+                    const li = createHistoryItem(item, index);
+                    modalHistoryList.appendChild(li);
+                });
+            } else {
+                modalHistoryPlaceholder.classList.remove('hidden');
+                clearHistoryBtn.classList.add('hidden');
+            }
+        }
+
+        function createHistoryItem(item, index) {
+             const li = document.createElement('li');
+             li.dataset.index = index;
+             const [expressionPart, resultPart] = item.split('=');
+             li.className = 'history-item p-4 mb-3 bg-gray-200 dark:bg-gray-700 rounded-lg text-lg text-right cursor-pointer';
+             
+             // Expression part with proper wrapping
+             const expressionEl = document.createElement('div');
+             expressionEl.className = 'text-gray-500 dark:text-gray-400 text-sm mb-1 break-words overflow-wrap-anywhere';
+             expressionEl.textContent = expressionPart.trim() + ' =';
+             
+             // Result part with proper wrapping
+             const resultEl = document.createElement('div');
+             resultEl.className = 'text-gray-900 dark:text-white text-2xl font-semibold break-words overflow-wrap-anywhere';
+             resultEl.textContent = resultPart ? resultPart.trim() : '';
+             li.appendChild(expressionEl);
+             li.appendChild(resultEl);
+             
+             li.addEventListener('mousedown', (e) => handlePressStart(e, index));
+             li.addEventListener('touchstart', (e) => handlePressStart(e, index, li));
+             li.addEventListener('mouseup', (e) => handlePressEnd(e, index));
+             li.addEventListener('mouseleave', () => cancelLongPress());
+             li.addEventListener('touchend', (e) => handlePressEnd(e, index, li));
+
+             if (isSelectionMode && selectedIndices.has(index)) li.classList.add('selected');
+             return li;
+        }
+        
+        function handlePressStart(e, index, el) {
+            e.stopPropagation(); isPressing = true;
+            longPressTimer = setTimeout(() => { if (isPressing) { isPressing = false; enterSelectionMode(index); } }, 500);
+        }
+
+        function handlePressEnd(e, index, el) {
+            e.stopPropagation(); clearTimeout(longPressTimer);
+            if (isPressing) { isPressing = false; if (isSelectionMode) toggleSelection(index, el); else loadFromHistory(index); }
+        }
+        
+        function cancelLongPress() { isPressing = false; clearTimeout(longPressTimer); }
+
+        function loadFromHistory(index) {
+            const result = history[index].split('=')[1].trim();
+            clearAll();
+            expression = result;
+            showingResult = true;
+            display.textContent = result;
+            closeHistoryModal();
+        }
+
+        function enterSelectionMode(index) {
+            isSelectionMode = true; 
+            toggleSelection(index);
+        }
+
+        function exitSelectionMode() {
+            isSelectionMode = false; 
+            selectedIndices.clear(); 
+            updateSelectionUI(); 
+            renderHistory();
+        }
+
+        function toggleSelection(index) {
+            if (!isSelectionMode) return;
+            const itemEl = modalHistoryList.querySelector(`[data-index='${index}']`);
+            if (selectedIndices.has(index)) {
+                selectedIndices.delete(index);
+                itemEl.classList.remove('selected');
+                // Exit selection mode if no items are selected
+                if (selectedIndices.size === 0) {
+                    exitSelectionMode();
+                }
+            } else {
+                selectedIndices.add(index);
+                itemEl.classList.add('selected');
+            }
+            updateSelectionUI();
+        }
+
+        function updateSelectionUI() {
+            const hasSelection = selectedIndices.size > 0;
+            shareHistoryBtn.classList.toggle('hidden', !hasSelection);
+            clearHistoryBtn.classList.toggle('hidden', hasSelection);
+        }
+
+        function shareHistory(event) {
+            event.preventDefault();
+            if (selectedIndices.size === 0) return;
+            showSharePreview();
+        }
+
+        function showSharePreview() {
+            // Create full-screen share preview modal
+            const sharePreviewModal = document.createElement('div');
+            sharePreviewModal.id = 'share-preview-modal';
+            sharePreviewModal.className = 'hidden absolute inset-0 bg-gray-100 dark:bg-gray-800 z-50 flex flex-col';
+            sharePreviewModal.innerHTML = `
+                <!-- Share Preview Header -->
+                <div class="flex justify-between items-center p-4 pt-6 pb-2 flex-shrink-0">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Share Preview</h2>
+                    <button id="close-share-preview" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Share Preview Content -->
+                <div class="flex-grow overflow-y-auto custom-scrollbar px-4">
+                    <!-- Title Input -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Title</label>
+                        <input type="text" id="share-title" value="My Calculations" 
+                               class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg 
+                                      bg-white dark:bg-gray-700 text-gray-900 dark:text-white
+                                      focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <!-- Preview Card -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview</label>
+                        <div id="share-preview-card" class="border-2 border-dashed border-gray-300 dark:border-gray-600 
+                             rounded-xl p-4 bg-gray-50 dark:bg-gray-700 min-h-[400px] overflow-y-auto
+                             scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-800">
+                            <!-- Preview content will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Share Preview Actions -->
+                <div class="p-4 border-t border-gray-200 dark:border-gray-600 flex-shrink-0 flex gap-4">
+                    <button id="cancel-share" class="bg-gray-500 text-white w-full px-4 py-3 rounded-lg text-sm font-medium shadow-md hover:bg-gray-600 transition-all">
+                        Cancel
+                    </button>
+                    <button id="generate-share" class="bg-blue-500 text-white w-full px-4 py-3 rounded-lg text-sm font-medium shadow-md hover:bg-blue-600 transition-all">
+                        Generate & Share
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('calculator-container').appendChild(sharePreviewModal);
+            
+            // Show the modal
+            sharePreviewModal.classList.remove('hidden');
+            
+            // Generate preview
+            generateSharePreview();
+            
+            // Event listeners
+            document.getElementById('share-title').addEventListener('input', generateSharePreview);
+            document.getElementById('close-share-preview').addEventListener('click', closeSharePreview);
+            document.getElementById('cancel-share').addEventListener('click', closeSharePreview);
+            document.getElementById('generate-share').addEventListener('click', () => {
+                generateAndShareImage();
+                closeSharePreview();
+            });
+        }
+
+        function closeSharePreview() {
+            const sharePreviewModal = document.getElementById('share-preview-modal');
+            if (sharePreviewModal) {
+                sharePreviewModal.classList.add('hidden');
+                setTimeout(() => {
+                    if (sharePreviewModal.parentNode) {
+                        sharePreviewModal.parentNode.removeChild(sharePreviewModal);
+                    }
+                }, 300);
+            }
+        }
+
+        function generateSharePreview() {
+            const title = document.getElementById('share-title').value || 'My Calculations';
+            const isDark = document.documentElement.classList.contains('dark');
+            const previewCard = document.getElementById('share-preview-card');
+            
+            // Premium color scheme
+            const bgColor = isDark ? '#0f172a' : '#ffffff';
+            const cardBg = isDark ? '#1e293b' : '#f8fafc';
+            const textColor = isDark ? '#f1f5f9' : '#0f172a';
+            const accentColor = isDark ? '#3b82f6' : '#2563eb';
+            const borderColor = isDark ? '#334155' : '#e2e8f0';
+            const secondaryText = isDark ? '#94a3b8' : '#64748b';
+            const shadowColor = isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
+            
+            previewCard.innerHTML = `
+                <div style="background: linear-gradient(135deg, ${bgColor} 0%, ${cardBg} 100%); 
+                            color: ${textColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            border-radius: 20px; box-shadow: 0 25px 50px -12px ${shadowColor}; 
+                            overflow: hidden; border: 1px solid ${borderColor}; max-width: 500px; margin: 0 auto;">
+                    
+                    <!-- Header -->
+                    <div style="background: linear-gradient(135deg, ${accentColor} 0%, ${isDark ? '#1d4ed8' : '#1e40af'} 100%);
+                                padding: 20px 32px; display: flex; align-items: center; position: relative;">
+                        
+                        <!-- App icon -->
+                        <!-- <div style="width: 48px; height: 48px;
+                                    border-radius: 12px; margin-right: 20px; display: flex;
+                                    align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: white;
+                                    flex-shrink: 0;">
+                            🧮
+                        </div> -->
+                        
+                        <!-- Text content -->
+                        <div style="flex: 1; text-align: left;">
+                            <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 4px 0; color: white; letter-spacing: -0.5px;">
+                                ${title}
+                            </h1>
+                            
+                            <!-- Timestamp -->
+                            <p style="font-size: 14px; font-weight: 400; margin: 0; color: rgba(255, 255, 255, 0.7);">
+                                ${new Date().toLocaleDateString('en-US', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                })} at ${new Date().toLocaleTimeString('en-US', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit',
+                                    second: '2-digit'
+                                })}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div style="padding: 32px; background: ${cardBg};">
+                        
+                        <!-- Count info -->
+                        <!-- <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+                                    padding: 16px 20px; background: ${isDark ? '#334155' : '#f1f5f9'}; border-radius: 12px;
+                                    border-left: 4px solid ${accentColor};">
+                            <span style="font-size: 16px; font-weight: 600; color: ${textColor};">
+                                Selected Calculations
+                            </span>
+                            <span style="font-size: 16px; font-weight: 700; color: ${accentColor};
+                                        background: ${isDark ? '#1e40af' : '#dbeafe'}; padding: 6px 12px; border-radius: 8px;">
+                                ${selectedIndices.size} items
+                            </span>
+                        </div> -->
+                        
+                        <!-- Calculations list -->
+                        ${Array.from(selectedIndices).sort((a, b) => a - b).map((index, i) => {
+                            const historyItem = history[index];
+                            const parts = historyItem.split('=');
+                            const expression = parts[0].trim();
+                            const result = parts[1] ? parts[1].trim() : '';
+                            
+                            return `
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; padding: 20px;
+                                        margin-bottom: 12px; background: ${isDark ? '#0f172a' : '#ffffff'}; border-radius: 16px;
+                                        border: 1px solid ${borderColor}; box-shadow: 0 4px 6px -1px ${shadowColor};">
+                                
+                                <!-- <div style="font-size: 14px; font-weight: 600; color: ${secondaryText};
+                                            background: ${isDark ? '#334155' : '#f1f5f9'}; padding: 6px 10px; border-radius: 8px;
+                                            min-width: 40px; text-align: center; margin-top: 4px;">
+                                    #${i + 1}
+                                </div> -->
+                                
+                                <div style="flex: 1; margin: 0; text-align: right; min-width: 0;">
+                                    <div style="font-size: 16px; font-weight: 500; color: ${textColor};
+                                                font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                                                letter-spacing: 0.5px; word-break: break-all; overflow-wrap: anywhere;
+                                                white-space: normal; line-height: 1.4; margin-bottom: 6px;">
+                                        ${expression}
+                                    </div>
+                                    <div style="font-size: 18px; font-weight: 700; color: ${accentColor};
+                                                font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                                                letter-spacing: 0.5px; word-break: break-all; overflow-wrap: anywhere;
+                                                white-space: normal; line-height: 1.3;">
+                                        = ${result}
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div style="padding: 10px; background: ${isDark ? '#0f172a' : '#f8fafc'};
+                                border-top: 1px solid ${borderColor}; text-align: center;">
+                        <p style="font-size: 14px; font-weight: 500; color: ${secondaryText}; margin: 0;">
+                            Generated by Calculator
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function generateAndShareImage() {
+            const title = document.getElementById('share-title').value || 'My Calculations';
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Premium color scheme
+            const bgColor = isDark ? '#0f172a' : '#ffffff';
+            const cardBg = isDark ? '#1e293b' : '#f8fafc';
+            const textColor = isDark ? '#f1f5f9' : '#0f172a';
+            const accentColor = isDark ? '#3b82f6' : '#2563eb';
+            const borderColor = isDark ? '#334155' : '#e2e8f0';
+            const secondaryText = isDark ? '#94a3b8' : '#64748b';
+            const shadowColor = isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)';
+
+            const elementToCapture = document.createElement('div');
+            elementToCapture.style.cssText = `
+                position: absolute; 
+                left: -9999px; 
+                width: 500px; 
+                padding: 0; 
+                background: linear-gradient(135deg, ${bgColor} 0%, ${cardBg} 100%);
+                color: ${textColor}; 
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                border-radius: 24px;
+                box-shadow: 0 25px 50px -12px ${shadowColor};
+                overflow: hidden;
+                border: 1px solid ${borderColor};
+            `;
+
+            // Header section with gradient
+            const header = document.createElement('div');
+            header.style.cssText = `
+                background: linear-gradient(135deg, ${accentColor} 0%, ${isDark ? '#1d4ed8' : '#1e40af'} 100%);
+                padding: 20px 32px;
+                display: flex;
+                align-items: center;
+                position: relative;
+            `;
+            
+            // App icon/logo placeholder - hidden to match preview
+            /*
+            const logo = document.createElement('div');
+            logo.style.cssText = `
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                margin-right: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                font-weight: bold;
+                color: white;
+                flex-shrink: 0;
+            `;
+            logo.textContent = '🧮';
+            header.appendChild(logo);
+            */
+
+            // Text content container
+            const textContainer = document.createElement('div');
+            textContainer.style.cssText = `
+                flex: 1;
+                text-align: left;
+            `;
+
+            const titleEl = document.createElement('h1');
+            titleEl.textContent = title;
+            titleEl.style.cssText = `
+                font-size: 24px; 
+                font-weight: 700; 
+                margin: 0 0 4px 0;
+                color: white;
+                letter-spacing: -0.5px;
+            `;
+            textContainer.appendChild(titleEl);
+
+            // Timestamp
+            const timestamp = document.createElement('p');
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            const timeStr = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            timestamp.textContent = `${dateStr} at ${timeStr}`;
+            timestamp.style.cssText = `
+                font-size: 14px; 
+                font-weight: 400; 
+                margin: 0;
+                color: rgba(255, 255, 255, 0.7);
+            `;
+            textContainer.appendChild(timestamp);
+
+            header.appendChild(textContainer);
+            elementToCapture.appendChild(header);
+
+            // Content section
+            const content = document.createElement('div');
+            content.style.cssText = `
+                padding: 32px;
+                background: ${cardBg};
+            `;
+
+            // Calculations count - removed to match preview
+            /*
+            const countInfo = document.createElement('div');
+            countInfo.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 24px;
+                padding: 16px 20px;
+                background: ${isDark ? '#334155' : '#f1f5f9'};
+                border-radius: 12px;
+                border-left: 4px solid ${accentColor};
+            `;
+
+            const countLabel = document.createElement('span');
+            countLabel.textContent = 'Selected Calculations';
+            countLabel.style.cssText = `
+                font-size: 16px;
+                font-weight: 600;
+                color: ${textColor};
+            `;
+
+            const countValue = document.createElement('span');
+            countValue.textContent = `${selectedIndices.size} items`;
+            countValue.style.cssText = `
+                font-size: 16px;
+                font-weight: 700;
+                color: ${accentColor};
+                background: ${isDark ? '#1e40af' : '#dbeafe'};
+                padding: 6px 12px;
+                border-radius: 8px;
+            `;
+
+            countInfo.appendChild(countLabel);
+            countInfo.appendChild(countValue);
+            content.appendChild(countInfo);
+            */
+
+            // Calculations list
+            const sortedIndices = Array.from(selectedIndices).sort((a, b) => a - b);
+            sortedIndices.forEach((index, i) => {
+                const historyItem = history[index];
+                const parts = historyItem.split('=');
+                const expression = parts[0].trim();
+                const result = parts[1] ? parts[1].trim() : '';
+                
+                const calcItem = document.createElement('div');
+                calcItem.style.cssText = `
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    padding: 20px;
+                    margin-bottom: 12px;
+                    background: ${isDark ? '#0f172a' : '#ffffff'};
+                    border-radius: 16px;
+                    border: 1px solid ${borderColor};
+                    box-shadow: 0 4px 6px -1px ${shadowColor};
+                    transition: all 0.2s ease;
+                `;
+
+                // Calculation number - hidden to match preview
+                /*
+                const calcNumber = document.createElement('div');
+                calcNumber.textContent = `#${i + 1}`;
+                calcNumber.style.cssText = `
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: ${secondaryText};
+                    background: ${isDark ? '#334155' : '#f1f5f9'};
+                    padding: 6px 10px;
+                    border-radius: 8px;
+                    min-width: 40px;
+                    text-align: center;
+                    margin-top: 4px;
+                `;
+                */
+
+                // Calculation content
+                const calcContent = document.createElement('div');
+                calcContent.style.cssText = `
+                    flex: 1;
+                    margin: 0;
+                    text-align: right;
+                    min-width: 0;
+                `;
+
+                // Expression line
+                const expressionEl = document.createElement('div');
+                expressionEl.textContent = expression;
+                expressionEl.style.cssText = `
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: ${textColor};
+                    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                    letter-spacing: 0.5px;
+                    word-break: break-all;
+                    overflow-wrap: anywhere;
+                    white-space: normal;
+                    line-height: 1.4;
+                    margin-bottom: 6px;
+                `;
+
+                // Result line
+                const resultEl = document.createElement('div');
+                resultEl.textContent = `= ${result}`;
+                resultEl.style.cssText = `
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: ${accentColor};
+                    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+                    letter-spacing: 0.5px;
+                    word-break: break-all;
+                    overflow-wrap: anywhere;
+                    white-space: normal;
+                    line-height: 1.3;
+                `;
+
+                calcContent.appendChild(expressionEl);
+                calcContent.appendChild(resultEl);
+                //calcItem.appendChild(calcNumber);
+                calcItem.appendChild(calcContent);
+                content.appendChild(calcItem);
+            });
+
+            elementToCapture.appendChild(content);
+
+            // Footer
+            const footer = document.createElement('div');
+            footer.style.cssText = `
+                padding-top: -10px;
+                padding-bottom: 15px;
+                background: ${isDark ? '#0f172a' : '#f8fafc'};
+                border-top: 1px solid ${borderColor};
+                text-align: center;
+            `;
+
+            const footerText = document.createElement('p');
+            footerText.textContent = 'Generated by Calculator';
+            footerText.style.cssText = `
+                font-size: 14px;
+                font-weight: 500;
+                color: ${secondaryText};
+                margin: 0;
+            `;
+
+            footer.appendChild(footerText);
+            elementToCapture.appendChild(footer);
+
+            document.body.appendChild(elementToCapture);
+            
+            try {
+                const canvas = await html2canvas(elementToCapture, { 
+                    scale: 2, 
+                    useCORS: true, 
+                    backgroundColor: bgColor,
+                    allowTaint: true,
+                    logging: false
+                });
+                
+                canvas.toBlob(async (blob) => {
+                    // Generate unique filename with timestamp
+                    const now = new Date();
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const year = now.getFullYear();
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    const seconds = String(now.getSeconds()).padStart(2, '0');
+                    const filename = `CalculatorPro_${day}-${month}-${year}_${hours}-${minutes}-${seconds}.png`;
+                    const file = new File([blob], filename, { type: "image/png" });
+                    
+                    if (navigator.share) { 
+                        await navigator.share({ title: 'My Calculator History', files: [file] }); 
+                    } else { 
+                        const a = document.createElement('a'); 
+                        a.href = URL.createObjectURL(blob); 
+                        a.download = filename; 
+                        a.click(); 
+                    }
+                }, 'image/png');
+            } catch (error) { 
+                console.error("Sharing failed:", error);
+            } finally { 
+                document.body.removeChild(elementToCapture); 
+                exitSelectionMode();
+                closeSharePreview();
+            }
+        }
+        
+        function updateThemeButtonsUI(theme) {
+            themeButtons.forEach(btn => {
+                btn.classList.remove('theme-btn-active');
+                if (btn.dataset.themeBtn === theme) {
+                    btn.classList.add('theme-btn-active');
+                }
+            });
+        }
+
+        function applyTheme(theme) {
+            localStorage.setItem('calculator-theme', theme);
+            updateThemeButtonsUI(theme);
+            if (theme === 'system') {
+                const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', systemPrefersDark);
+            } else {
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+            }
+        }
+
+        function updateCalcModeButtonsUI(mode) {
+            calcModeButtons.forEach(btn => {
+                btn.classList.remove('theme-btn-active');
+                if (btn.dataset.calcMode === mode) {
+                    btn.classList.add('theme-btn-active');
+                }
+            });
+        }
+
+        function applyCalculationMode(mode) {
+            calculationMode = mode;
+            localStorage.setItem('calculator-mode', mode);
+            updateCalcModeButtonsUI(mode);
+        }
+
+        function toggleCollapsibleSection(options, arrow) {
+            options.classList.toggle('hidden');
+            arrow.classList.toggle('rotate-180');
+        }
+
+        function collapseAllSections() {
+            calcModeOptions.classList.add('hidden');
+            calcModeArrow.classList.remove('rotate-180');
+            themeOptions.classList.add('hidden');
+            themeArrow.classList.remove('rotate-180');
+        }
+        
+        // Handle mobile browser UI changes and calculate available height
+        function handleViewportChange() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+            
+            // Calculate available height accounting for browser UI and safe areas
+            const viewportHeight = window.innerHeight;
+            const safeAreaTop = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)')) || 0;
+            const safeAreaBottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)')) || 0;
+            
+            // Estimate browser UI height (address bar, tabs, etc.)
+            const browserUIHeight = Math.max(viewportHeight * 0); // At least 60px or 10% of viewpor   
+            // Calculate actual available height
+            const availableHeight = viewportHeight - safeAreaTop - safeAreaBottom - browserUIHeight;
+            
+            // Set CSS custom property for available height
+            document.documentElement.style.setProperty('--available-height', `${availableHeight}px`);
+            
+            // Update body height to use available space
+            document.body.style.height = `${availableHeight}px`;
+            document.body.style.minHeight = `${availableHeight}px`;
+            
+            // Update calculator container
+            const calculatorContainer = document.getElementById('calculator-container');
+            calculatorContainer.style.minHeight = `${availableHeight}px`;
+            calculatorContainer.style.height = 'auto'; // Allow content to determine height
+            
+            // Set precise height distribution
+            const topSection = document.getElementById('top-section');
+            const keypad = document.getElementById('keypad');
+            
+            if (topSection && keypad) {
+                // Top section gets 40% of available height
+                const topHeight = Math.max(200, availableHeight * 0.4);
+                topSection.style.height = `${topHeight}px`;
+                
+                // Keypad gets 60% of available height
+                const keypadHeight = Math.max(300, availableHeight * 0.595);
+                keypad.style.height = `${keypadHeight}px`;
+            }
+            
+            // Enable scrolling if content exceeds available height
+            const totalContentHeight = (topSection?.offsetHeight || 0) + (keypad?.offsetHeight || 0);
+            if (totalContentHeight > availableHeight) {
+                calculatorContainer.style.overflowY = 'auto';
+            } else {
+                calculatorContainer.style.overflowY = 'visible';
+            }
+        }
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            // Set initial viewport height
+            handleViewportChange();
+            
+            // Listen for viewport changes (mobile browser UI show/hide)
+            window.addEventListener('resize', handleViewportChange);
+            window.addEventListener('orientationchange', () => {
+                setTimeout(handleViewportChange, 100);
+            });
+            menuIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menuModal.classList.toggle('hidden');
+                if(menuModal.classList.contains('hidden')) {
+                    collapseAllSections();
+                }
+            });
+
+            historyMenuBtn.addEventListener('click', () => {
+                menuModal.classList.add('hidden');
+                openHistoryModal();
+            });
+
+            closeHistoryBtn.addEventListener('click', closeHistoryModal);
+
+            shareHistoryBtn.addEventListener('click', shareHistory);
+
+            calcModeHeader.addEventListener('click', () => toggleCollapsibleSection(calcModeOptions, calcModeArrow));
+            themeHeader.addEventListener('click', () => toggleCollapsibleSection(themeOptions, themeArrow));
+
+            document.addEventListener('click', (e) => {
+                if (!menuModal.contains(e.target) && !menuIcon.contains(e.target)) {
+                    menuModal.classList.add('hidden');
+                    collapseAllSections();
+                }
+            });
+            
+            calcModeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    applyCalculationMode(button.dataset.calcMode);
+                });
+            });
+
+            themeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    applyTheme(button.dataset.themeBtn);
+                });
+            });
+
+            // Load saved state
+            const savedTheme = localStorage.getItem('calculator-theme') || 'system';
+            const savedMode = localStorage.getItem('calculator-mode') || 'bodmas';
+            const savedHistory = localStorage.getItem('calculator-history');
+            if(savedHistory) {
+                history = JSON.parse(savedHistory);
+            }
+            applyTheme(savedTheme);
+            applyCalculationMode(savedMode);
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (localStorage.getItem('calculator-theme') === 'system') {
+                    document.documentElement.classList.toggle('dark', e.matches);
+                }
+            });
+            
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
+

@@ -1,5 +1,5 @@
 <div align="center">
-<img src="www/calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+<img src="dist/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
 <h1 style="display: inline-block; vertical-align: middle; margin: 0;">Calculator</h1> 
 </div>
 
@@ -45,7 +45,7 @@ A modern, feature-rich calculator application built with HTML, CSS, and JavaScri
 
 **Installation:**
 1. Clone or download the repository
-2. Open `www/index.html` in your web browser
+2. Open `dist/index.html` in your web browser
 3. Start calculating!
 
 ### 📱 Android App
@@ -191,9 +191,10 @@ Optimized for all devices:
 
 ```
 Calculator/
-├── www/                                    # Web app files
+├── dist/                                  # Web app files (for GitHub Pages)
 │   ├── index.html                         # Main HTML file
-│   └── calculator-variant-custom (2).png  # App icon
+│   └── www/                              # Images and assets
+│       └── calculator-variant-custom (2).png  # App icon
 ├── android/                               # Android app files
 │   └── app/
 │       ├── calculator-release-key.keystore # Signing key
@@ -258,4 +259,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**<img src="www/calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
+**<img src="dist/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
