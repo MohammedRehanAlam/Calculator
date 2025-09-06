@@ -1,9 +1,9 @@
 <div align="center">
-<img src="calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+<img src="www/calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
 <h1 style="display: inline-block; vertical-align: middle; margin: 0;">Calculator</h1> 
 </div>
 
-A modern, feature-rich calculator web application built with HTML, CSS, and JavaScript. Designed for simplicity and functionality with a beautiful, responsive interface.
+A modern, feature-rich calculator application built with HTML, CSS, and JavaScript. Available as both a web app and native Android app. Designed for simplicity and functionality with a beautiful, responsive interface.
 
 ## ✨ Features
 
@@ -20,6 +20,8 @@ A modern, feature-rich calculator web application built with HTML, CSS, and Java
 - **System Theme Support**: Automatically adapts to your system preferences
 - **Responsive Layout**: Optimized for all screen sizes and devices
 - **Touch-Friendly**: Designed for mobile and tablet use
+- **Custom App Icon**: Beautiful blue calculator icon with math symbols
+- **No Splash Screen**: Direct launch to calculator interface
 
 ### 📊 History Management
 - **Calculation History**: Automatically saves all calculations
@@ -36,14 +38,30 @@ A modern, feature-rich calculator web application built with HTML, CSS, and Java
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 🌐 Web Version
+**Prerequisites:**
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 - No installation required - runs entirely in the browser
 
-### Installation
+**Installation:**
 1. Clone or download the repository
-2. Open `index.html` in your web browser
+2. Open `www/index.html` in your web browser
 3. Start calculating!
+
+### 📱 Android App
+**Prerequisites:**
+- Android device (Android 5.0+)
+- APK installation enabled
+
+**Installation:**
+1. Download the APK file from `android/app/build/outputs/apk/release/app-release.apk`
+2. Enable "Install from unknown sources" in Android settings
+3. Tap the APK file to install
+4. Launch the Calculator app from your app drawer
+
+**For Google Play Store:**
+- Upload the AAB file from `android/app/build/outputs/bundle/release/app-release.aab`
+- Google Play will automatically sign and distribute your app
 
 ## 📱 Usage
 
@@ -103,6 +121,9 @@ Optimized for all devices:
 - **JavaScript**: Vanilla JS for functionality
 - **Local Storage**: Persistent data storage
 - **html2canvas**: Image generation for sharing
+- **Capacitor**: Cross-platform native app development
+- **Android Studio**: Native Android app building
+- **Gradle**: Android build system
 
 ### Browser Support
 - Chrome 60+
@@ -115,6 +136,73 @@ Optimized for all devices:
 - No external dependencies (except CDN libraries)
 - Optimized animations and transitions
 - Efficient memory usage
+
+## 🛠️ Building the Android App
+
+### Prerequisites
+- **Node.js** (LTS version)
+- **Android Studio** with Android SDK
+- **Java Development Kit (JDK)**
+
+### Build Process
+1. **Install Capacitor CLI:**
+   ```bash
+   npm install -g @capacitor/cli
+   ```
+
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Initialize Capacitor:**
+   ```bash
+   npx cap init "Calculator" "com.yourcompany.calculator"
+   ```
+
+4. **Add Android Platform:**
+   ```bash
+   npx cap add android
+   ```
+
+5. **Sync Files:**
+   ```bash
+   npx cap sync
+   ```
+
+6. **Build APK/AAB:**
+   ```bash
+   cd android
+   ./gradlew assembleRelease  # For APK
+   ./gradlew bundleRelease    # For AAB (Google Play Store)
+   ```
+
+### Output Files
+- **APK**: `android/app/build/outputs/apk/release/app-release.apk`
+- **AAB**: `android/app/build/outputs/bundle/release/app-release.aab`
+- **Keystore**: `android/app/calculator-release-key.keystore`
+
+### Customization
+- **App Icon**: Replace files in `android/app/src/main/res/mipmap-*/`
+- **App Name**: Modify `capacitor.config.ts`
+- **Package Name**: Change in `capacitor.config.ts` and `android/app/build.gradle`
+
+## 📁 Project Structure
+
+```
+Calculator/
+├── www/                                    # Web app files
+│   ├── index.html                         # Main HTML file
+│   └── calculator-variant-custom (2).png  # App icon
+├── android/                               # Android app files
+│   └── app/
+│       ├── calculator-release-key.keystore # Signing key
+│       ├── build.gradle                   # Build configuration
+│       └── src/main/res/mipmap-*/         # App icons
+├── package.json                           # Node.js dependencies
+├── capacitor.config.ts                    # Capacitor configuration
+└── README.md                              # This file
+```
 
 ## 🎨 Design Philosophy
 
@@ -164,7 +252,10 @@ This project is open source and available under the [MIT License](LICENSE).
 - **html2canvas** for the image generation capability
 - **Inter Font** for the modern typography
 - **Google Fonts** for the font delivery
+- **Capacitor** for cross-platform native app development
+- **Ionic Team** for the Capacitor framework
+- **Android Studio** for the development environment
 
 ---
 
-**<img src="calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
+**<img src="www/calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
