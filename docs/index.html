@@ -21,6 +21,19 @@
     <!-- html2canvas library for converting HTML to an image -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
+    <!-- Capacitor Share plugin -->
+    <script>
+        // Initialize Capacitor Share plugin
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Share) {
+                window.CapacitorShare = window.Capacitor.Plugins.Share;
+                console.log('Capacitor Share plugin loaded');
+            } else {
+                console.log('Capacitor Share plugin not available');
+            }
+        });
+    </script>
+    
     <!-- Google Fonts for a modern look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -624,6 +637,19 @@
             
             <!-- History Content -->
             <div class="flex-grow overflow-y-auto custom-scrollbar px-4">
+                <!-- Selection Instructions -->
+                <div id="selection-instructions" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4 text-sm">
+                    <div class="flex items-center text-blue-700 dark:text-blue-300">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span class="font-medium">Tip:</span>
+                    </div>
+                    <p class="text-blue-600 dark:text-blue-400 mt-1">
+                        <strong>Tap</strong> to use a calculation • <strong>Long press</strong> to select single/multiple calculations for sharing
+                    </p>
+                </div>
+                
                 <ul id="modal-history-list" class="text-gray-900 dark:text-gray-300"></ul>
                 <div id="modal-history-placeholder" class="text-gray-400 dark:text-gray-500 text-center p-8">Your calculations will appear here.</div>
             </div>
@@ -1118,13 +1144,50 @@
         }
         
         function handlePressStart(e, index, el) {
-            e.stopPropagation(); isPressing = true;
-            longPressTimer = setTimeout(() => { if (isPressing) { isPressing = false; enterSelectionMode(index); } }, 500);
+            e.preventDefault();
+            e.stopPropagation(); 
+            isPressing = true;
+            
+            // Add visual feedback for touch
+            if (el) {
+                el.style.transform = 'scale(0.98)';
+                el.style.transition = 'transform 0.1s ease';
+            }
+            
+            longPressTimer = setTimeout(() => { 
+                if (isPressing) { 
+                    isPressing = false; 
+                    enterSelectionMode(index); 
+                    // Add haptic feedback if available
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                } 
+            }, 400); // Reduced from 500ms for better responsiveness
         }
 
         function handlePressEnd(e, index, el) {
-            e.stopPropagation(); clearTimeout(longPressTimer);
-            if (isPressing) { isPressing = false; if (isSelectionMode) toggleSelection(index, el); else loadFromHistory(index); }
+            e.preventDefault();
+            e.stopPropagation(); 
+            clearTimeout(longPressTimer);
+            
+            // Remove visual feedback
+            if (el) {
+                el.style.transform = 'scale(1)';
+            }
+            
+            if (isPressing) { 
+                isPressing = false; 
+                if (isSelectionMode) {
+                    toggleSelection(index, el);
+                    // Add haptic feedback for selection
+                    if (navigator.vibrate) {
+                        navigator.vibrate(25);
+                    }
+                } else {
+                    loadFromHistory(index);
+                }
+            }
         }
         
         function cancelLongPress() { isPressing = false; clearTimeout(longPressTimer); }
@@ -1141,6 +1204,12 @@
         function enterSelectionMode(index) {
             isSelectionMode = true; 
             toggleSelection(index);
+            
+            // Hide selection instructions
+            const instructions = document.getElementById('selection-instructions');
+            if (instructions) {
+                instructions.style.display = 'none';
+            }
         }
 
         function exitSelectionMode() {
@@ -1148,6 +1217,12 @@
             selectedIndices.clear(); 
             updateSelectionUI(); 
             renderHistory();
+            
+            // Show selection instructions again
+            const instructions = document.getElementById('selection-instructions');
+            if (instructions) {
+                instructions.style.display = 'block';
+            }
         }
 
         function toggleSelection(index) {
@@ -1173,10 +1248,127 @@
             clearHistoryBtn.classList.toggle('hidden', hasSelection);
         }
 
-        function shareHistory(event) {
+        async function shareHistory(event) {
             event.preventDefault();
             if (selectedIndices.size === 0) return;
+            
+            // Check and request permissions if needed
+            const hasPermission = await checkAndRequestPermissions();
+            if (!hasPermission) {
+                showPermissionDeniedMessage();
+                return;
+            }
+            
             showSharePreview();
+        }
+
+        async function checkAndRequestPermissions() {
+            try {
+                // Check if we're in a Capacitor environment
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Permissions) {
+                    const permissions = window.Capacitor.Plugins.Permissions;
+                    
+                    // Check storage permissions
+                    const storagePermission = await permissions.query({
+                        name: 'storage'
+                    });
+                    
+                    if (storagePermission.state !== 'granted') {
+                        const result = await permissions.request({
+                            name: 'storage'
+                        });
+                        
+                        if (result.state !== 'granted') {
+                            return false;
+                        }
+                    }
+                }
+                
+                // For Android, we might need to check additional permissions
+                if (window.Capacitor && window.Capacitor.Platform && window.Capacitor.Platform.is('android')) {
+                    // Check if we have the necessary permissions for file sharing
+                    if (window.Capacitor.Plugins && window.Capacitor.Plugins.Permissions) {
+                        const permissions = window.Capacitor.Plugins.Permissions;
+                        
+                        // Request external storage permission for older Android versions
+                        const externalStoragePermission = await permissions.query({
+                            name: 'external-storage'
+                        });
+                        
+                        if (externalStoragePermission.state !== 'granted') {
+                            const result = await permissions.request({
+                                name: 'external-storage'
+                            });
+                            
+                            if (result.state !== 'granted') {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                
+                return true;
+            } catch (error) {
+                console.log('Permission check failed:', error);
+                // If permission system is not available, assume we have permission
+                return true;
+            }
+        }
+
+        function showPermissionDeniedMessage() {
+            // Create a modal to show permission explanation
+            const permissionModal = document.createElement('div');
+            permissionModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            permissionModal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center mr-4">
+                            <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Permission Required</h3>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-gray-600 dark:text-gray-300 mb-4">
+                            To share your calculations, this app needs access to your device's storage. This allows us to:
+                        </p>
+                        <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+                            <li>• Generate shareable images of your calculations</li>
+                            <li>• Save images temporarily for sharing</li>
+                            <li>• Share via messaging apps, email, and social media</li>
+                        </ul>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            <strong>Note:</strong> We only access storage when you choose to share. Your calculations remain private.
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="permission-cancel" class="flex-1 px-4 py-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+                            Cancel
+                        </button>
+                        <button id="permission-retry" class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(permissionModal);
+            
+            // Event listeners
+            document.getElementById('permission-cancel').addEventListener('click', () => {
+                document.body.removeChild(permissionModal);
+            });
+            
+            document.getElementById('permission-retry').addEventListener('click', async () => {
+                document.body.removeChild(permissionModal);
+                const hasPermission = await checkAndRequestPermissions();
+                if (hasPermission) {
+                    showSharePreview();
+                } else {
+                    showPermissionDeniedMessage();
+                }
+            });
         }
 
         function showSharePreview() {
@@ -1374,6 +1566,49 @@
                     </div>
                 </div>
             `;
+        }
+
+        async function saveFileForSharing(blob, filename) {
+            try {
+                // Try to use Capacitor Filesystem plugin if available
+                if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
+                    const filesystem = window.Capacitor.Plugins.Filesystem;
+                    
+                    // Convert blob to base64
+                    const reader = new FileReader();
+                    return new Promise((resolve, reject) => {
+                        reader.onloadend = async function() {
+                            try {
+                                const base64Data = reader.result.split(',')[1];
+                                
+                                // Save to cache directory
+                                const result = await filesystem.writeFile({
+                                    path: filename,
+                                    data: base64Data,
+                                    directory: 'CACHE'
+                                });
+                                
+                                // Get the file URI
+                                const fileUri = await filesystem.getUri({
+                                    directory: 'CACHE',
+                                    path: filename
+                                });
+                                
+                                resolve(fileUri.uri);
+                            } catch (error) {
+                                reject(error);
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                } else {
+                    // Fallback: return null to trigger download
+                    return null;
+                }
+            } catch (error) {
+                console.log('File saving failed:', error);
+                return null;
+            }
         }
 
         async function generateAndShareImage() {
@@ -1656,9 +1891,45 @@
                     const filename = `CalculatorPro_${day}-${month}-${year}_${hours}-${minutes}-${seconds}.png`;
                     const file = new File([blob], filename, { type: "image/png" });
                     
-                    if (navigator.share) { 
-                        await navigator.share({ title: 'My Calculator History', files: [file] }); 
+                    // Try Capacitor Share plugin first (for mobile apps)
+                    if (window.CapacitorShare) {
+                        try {
+                            // For Capacitor Share, we need to save the file first and get a file URI
+                            const fileUri = await saveFileForSharing(blob, filename);
+                            
+                            if (fileUri) {
+                                await window.CapacitorShare.share({
+                                    title: 'My Calculator History',
+                                    text: `Check out my calculations! Generated on ${new Date().toLocaleDateString()}`,
+                                    files: [fileUri],
+                                    dialogTitle: 'Share Calculator History'
+                                });
+                            } else {
+                                throw new Error('Could not save file for sharing');
+                            }
+                        } catch (error) {
+                            console.log('Capacitor Share failed, falling back to download:', error);
+                            // Fallback to download
+                            const a = document.createElement('a'); 
+                            a.href = URL.createObjectURL(blob); 
+                            a.download = filename; 
+                            a.click(); 
+                        }
+                    }
+                    // Try Web Share API (for browsers that support it)
+                    else if (navigator.share) { 
+                        try {
+                            await navigator.share({ title: 'My Calculator History', files: [file] }); 
+                        } catch (error) {
+                            console.log('Web Share API failed, falling back to download:', error);
+                            // Fallback to download
+                            const a = document.createElement('a'); 
+                            a.href = URL.createObjectURL(blob); 
+                            a.download = filename; 
+                            a.click(); 
+                        }
                     } else { 
+                        // Fallback to download
                         const a = document.createElement('a'); 
                         a.href = URL.createObjectURL(blob); 
                         a.download = filename; 
