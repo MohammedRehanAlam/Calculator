@@ -1,0 +1,27 @@
+{
+  "name": "calculator",
+  "version": "1.0.1",
+  "description": "A modern calculator web application",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'Build complete'",
+    "android": "npx cap run android",
+    "android:build": "npx cap build android",
+    "sync": "npx cap sync"
+  },
+  "keywords": [
+    "calculator",
+    "mobile",
+    "android"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@capacitor/android": "^5.5.1",
+    "@capacitor/cli": "^5.5.1",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@capacitor/core": "^5.5.1"
+  }
+}
