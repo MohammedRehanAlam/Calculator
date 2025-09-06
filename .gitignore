@@ -1,0 +1,219 @@
+# Calculator Project .gitignore
+# This file protects sensitive files and excludes unnecessary files from version control
+
+# ===========================================
+# SENSITIVE FILES - NEVER COMMIT THESE
+# ===========================================
+
+# Android Keystore Files (CRITICAL - Contains signing keys)
+*.keystore
+*.jks
+*.p12
+*.pfx
+android/app/calculator-release-key.keystore
+android/app/*.keystore
+android/app/*.jks
+
+# Android Signing Configuration
+android/app/signing.properties
+android/keystore.properties
+android/app/keystore.properties
+
+# API Keys and Secrets
+.env
+.env.local
+.env.production
+.env.staging
+config/secrets.json
+secrets.json
+api-keys.json
+
+# ===========================================
+# BUILD OUTPUTS - Generated Files
+# ===========================================
+
+# Android Build Outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/app/build/outputs/
+android/app/build/intermediates/
+android/app/build/tmp/
+android/app/build/generated/
+
+# APK and AAB Files
+*.apk
+*.aab
+*.aar
+*.ap_
+
+# Capacitor Build Outputs
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# ===========================================
+# DEVELOPMENT FILES
+# ===========================================
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Temporary Files
+*.tmp
+*.temp
+*.log
+*.cache
+.cache/
+
+# ===========================================
+# CAPACITOR SPECIFIC
+# ===========================================
+
+# Capacitor Generated Files
+capacitor.config.json
+capacitor.plugins.json
+capacitor-cordova-android-plugins/
+
+# ===========================================
+# ANDROID STUDIO SPECIFIC
+# ===========================================
+
+# Android Studio
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/navEditor.xml
+.idea/vcs.xml
+
+# Android Build
+local.properties
+.gradle/
+build/
+bin/
+gen/
+out/
+.externalNativeBuild
+.cxx/
+
+# Android Profiling
+*.hprof
+
+# ===========================================
+# SYSTEM FILES
+# ===========================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# BACKUP AND ARCHIVE FILES
+# ===========================================
+
+# Backup Files
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+# Archive Files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ===========================================
+# DOCUMENTATION AND NOTES
+# ===========================================
+
+# Personal Notes
+notes.txt
+TODO.txt
+personal-notes.md
+development-notes.md
+
+# ===========================================
+# TESTING AND DEBUGGING
+# ===========================================
+
+# Test Outputs
+test-results/
+coverage/
+.nyc_output/
+
+# Debug Files
+debug.log
+error.log
+crash.log
+
+# ===========================================
+# CUSTOM EXCLUSIONS
+# ===========================================
+
+# Add any project-specific files to ignore here
+# Example:
+# custom-config.json
+# local-settings.json
+
+# ===========================================
+# IMPORTANT NOTES
+# ===========================================
+
+# NEVER COMMIT:
+# - Keystore files (*.keystore, *.jks)
+# - API keys and secrets
+# - Build outputs (*.apk, *.aab)
+# - Local configuration files
+# - Personal notes and development files
+
+# ALWAYS COMMIT:
+# - Source code (docs/index.html)
+# - Configuration templates
+# - Documentation (README.md)
+# - Build scripts
+# - Project structure files

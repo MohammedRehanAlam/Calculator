@@ -3,7 +3,7 @@
 <h1 style="display: inline-block; vertical-align: middle; margin: 0;">Calculator</h1> 
 </div>
 
-A modern, feature-rich calculator application built with HTML, CSS, and JavaScript. Available as both a web app and native Android app. Designed for simplicity and functionality with a beautiful, responsive interface.
+A modern, feature-rich calculator application built with HTML, CSS, and JavaScript. Available as both a web app and native Android app with advanced sharing capabilities. Designed for simplicity and functionality with a beautiful, responsive interface and comprehensive permission handling.
 
 ## ✨ Features
 
@@ -26,8 +26,10 @@ A modern, feature-rich calculator application built with HTML, CSS, and JavaScri
 ### 📊 History Management
 - **Calculation History**: Automatically saves all calculations
 - **Interactive History**: Tap to load previous calculations
-- **Multi-Select Mode**: Long-press to select multiple calculations
-- **Share Feature**: Generate beautiful calculation cards for sharing
+- **Smart Selection**: Long-press to select single/multiple calculations
+- **Advanced Sharing**: Native Android sharing with permission handling
+- **Visual Feedback**: Touch animations and haptic feedback
+- **User Guidance**: Clear instructions for selection and sharing
 - **Local Storage**: History persists between sessions
 
 ### ⚙️ Advanced Options
@@ -35,6 +37,8 @@ A modern, feature-rich calculator application built with HTML, CSS, and JavaScri
 - **Theme Customization**: Light, Dark, or System theme
 - **Input Validation**: Prevents invalid expressions and provides feedback
 - **Error Handling**: Graceful error handling with user-friendly messages
+- **Permission Management**: Automatic permission requests with clear explanations
+- **Cross-Platform Sharing**: Works on Android, iOS, and web browsers
 
 ## 🚀 Getting Started
 
@@ -45,7 +49,7 @@ A modern, feature-rich calculator application built with HTML, CSS, and JavaScri
 
 **Installation:**
 1. Clone or download the repository
-2. Open `dist/index.html` in your web browser
+2. Open `docs/index.html` in your web browser
 3. Start calculating!
 
 ### 📱 Android App
@@ -77,7 +81,9 @@ A modern, feature-rich calculator application built with HTML, CSS, and JavaScri
 - **History Access**: Tap the menu icon (⋮) and select "History"
 - **Theme Switching**: Menu → Theme → Choose Light/Dark/System
 - **Calculation Mode**: Menu → Calculation Mode → BODMAS/Left-to-Right
-- **Sharing**: In history, long-press calculations to select and share
+- **Smart Selection**: In history, long-press calculations to select single/multiple items
+- **Native Sharing**: Share selected calculations via Android's built-in share dialog
+- **Permission Handling**: Automatic permission requests with clear explanations
 
 ### Keyboard Support
 - **Numbers**: 0-9 keys
@@ -99,19 +105,30 @@ The calculator prevents invalid inputs and provides helpful feedback:
 - Limits expression complexity
 - Shows clear error messages
 
-### Beautiful Sharing
-Generate stunning calculation cards that can be shared as images:
-- Professional design with gradients
-- Customizable titles
-- Multiple calculation support
-- Automatic timestamps
-- High-quality PNG export
+### Advanced Sharing System
+Comprehensive sharing capabilities with native Android integration:
+- **Native Android Sharing**: Uses Android's built-in share dialog
+- **Permission Management**: Automatic permission requests with user-friendly explanations
+- **Multi-Tier Fallback**: Capacitor Share → Web Share API → Download fallback
+- **Professional Design**: Beautiful calculation cards with gradients
+- **Customizable Titles**: Personalize your shared calculations
+- **Multiple Selection**: Share single or multiple calculations at once
+- **Cross-Platform**: Works on Android, iOS, and web browsers
+- **High-Quality Export**: PNG images with automatic timestamps
 
 ### Responsive Design
 Optimized for all devices:
 - **Mobile**: Touch-optimized buttons and gestures
 - **Tablet**: Comfortable spacing and larger touch targets
 - **Desktop**: Keyboard shortcuts and mouse interactions
+
+### 🔐 Permission & Security Features
+Advanced permission handling for secure sharing:
+- **Automatic Permission Requests**: Seamless permission management
+- **User-Friendly Explanations**: Clear permission dialogs with detailed explanations
+- **Privacy-First Approach**: Only requests permissions when needed
+- **Secure File Handling**: Proper file management with Capacitor Filesystem
+- **Cross-Platform Security**: Consistent security across all platforms
 
 ## 🔧 Technical Details
 
@@ -122,6 +139,8 @@ Optimized for all devices:
 - **Local Storage**: Persistent data storage
 - **html2canvas**: Image generation for sharing
 - **Capacitor**: Cross-platform native app development
+- **@capacitor/share**: Native sharing functionality
+- **@capacitor/filesystem**: File operations and storage
 - **Android Studio**: Native Android app building
 - **Gradle**: Android build system
 
@@ -133,9 +152,11 @@ Optimized for all devices:
 
 ### Performance
 - Lightweight and fast loading
-- No external dependencies (except CDN libraries)
+- Minimal external dependencies (CDN libraries only)
 - Optimized animations and transitions
 - Efficient memory usage
+- Native Android performance optimization
+- Responsive touch handling with haptic feedback
 
 ## 🛠️ Building the Android App
 
@@ -165,12 +186,18 @@ Optimized for all devices:
    npx cap add android
    ```
 
-5. **Sync Files:**
+5. **Install Sharing Plugins:**
+   ```bash
+   npm install @capacitor/share@^5.0.0
+   npm install @capacitor/filesystem@^5.0.0
+   ```
+
+6. **Sync Files:**
    ```bash
    npx cap sync
    ```
 
-6. **Build APK/AAB:**
+7. **Build APK/AAB:**
    ```bash
    cd android
    ./gradlew assembleRelease  # For APK
@@ -186,15 +213,16 @@ Optimized for all devices:
 - **App Icon**: Replace files in `android/app/src/main/res/mipmap-*/`
 - **App Name**: Modify `capacitor.config.ts`
 - **Package Name**: Change in `capacitor.config.ts` and `android/app/build.gradle`
+- **Web Assets**: Main files are in `docs/` folder
+- **Sharing Features**: Configured in `docs/index.html`
 
 ## 📁 Project Structure
 
 ```
 Calculator/
-├── dist/                                  # Web app files (for GitHub Pages)
-│   ├── index.html                         # Main HTML file
-│   └── www/                              # Images and assets
-│       └── calculator-variant-custom (2).png  # App icon
+├── docs/                                  # Main web app files
+│   ├── index.html                         # Main HTML file with all features
+│   └── calculator-variant-custom (2).png  # App icon
 ├── android/                               # Android app files
 │   └── app/
 │       ├── calculator-release-key.keystore # Signing key
@@ -202,6 +230,8 @@ Calculator/
 │       └── src/main/res/mipmap-*/         # App icons
 ├── package.json                           # Node.js dependencies
 ├── capacitor.config.ts                    # Capacitor configuration
+├── build-instructions.md                  # Detailed build guide
+├── build-android.bat                     # Windows build script
 └── README.md                              # This file
 ```
 
@@ -234,6 +264,9 @@ Calculator/
 - [ ] Custom themes
 - [ ] Export to PDF
 - [ ] Voice input support
+- [ ] iOS app version
+- [ ] Enhanced sharing options
+- [ ] Calculation categories
 
 ## 🤝 Contributing
 
@@ -254,6 +287,8 @@ This project is open source and available under the [MIT License](LICENSE).
 - **Inter Font** for the modern typography
 - **Google Fonts** for the font delivery
 - **Capacitor** for cross-platform native app development
+- **@capacitor/share** for native sharing functionality
+- **@capacitor/filesystem** for file operations
 - **Ionic Team** for the Capacitor framework
 - **Android Studio** for the development environment
 
