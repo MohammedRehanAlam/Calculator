@@ -1,5 +1,5 @@
 <div align="center">
-<img src="docs/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+<img src="dist/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="48" height="48" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
 <h1 style="display: inline-block; vertical-align: middle; margin: 0;">Calculator</h1> 
 </div>
 
@@ -259,4 +259,4 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ---
 
-**<img src="docs/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
+**<img src="dist/www/calculator-variant-custom (2).png" alt="Calculator Logo" width="20" height="20" style="display: inline-block; vertical-align: middle; margin-right: 8px;">Calculator** - Making calculations beautiful and simple since 2025! ✨
